@@ -7,24 +7,32 @@ const mongoose = require('mongoose');
 //TODO Make sure milestones are properly set up within doc.
 const Milestone = require('./models/milestone');
 const Project = require('./models/project');
-//const router = express.Router();
+const router = express.Router();
 
 
-//app.use('/api', router);
+
+app.use('/api', router);
 app.use(bodyParser.urlencoded({ extended: true}));
 app.use(bodyParser.json());
 
-//mongoose.Promise = require('bluebird');
 //Select the database
-mongoose.connect('mongodb://localhost:27017/ProPlan');
+// mongoose.connect('mongodb://localhost:27017/ProPlan');
 
-app.use((req,res,next) => {
+const uri= "mongodb://TestUser01:mongobongo01@satelliteoflove-shard-00-00-1fru3.mongodb.net:27017,satelliteoflove-shard-00-01-1fru3.mongodb.net:27017,satelliteoflove-shard-00-02-1fru3.mongodb.net:27017/test?ssl=true&replicaSet=SatelliteOfLove-shard-0&authSource=admin&retryWrites=true"
+
+// const uri="mongodb+srv://TestUser01: mongobongo01@satelliteoflove-1fru3.mongodb.net/ProPlan";
+
+mongoose.connect(uri)
+.then(() => console.log("Mongo Database connected"))
+.catch(err => console.log(err));
+
+router.use((req,res,next) => {
 	console.log('we use the router, and next moves to the next requests');
 	next();
 });
 
 
-app.get('/', (req, res) => {
+router.get('/', (req, res) => {
 	res.json({ message: 'You did it! Great job!'});
 });
 
@@ -33,7 +41,7 @@ app.get('/', (req, res) => {
 //PROJECTS Collection
 
 //Show all docs in collection
-app.get('/api/projects', (req,res) => {
+router.get('/projects', (req,res) => {
 	console.log('get projects')
 	Project.find({}).then(eachOne => {
 		res.json(eachOne)
@@ -48,8 +56,9 @@ app.get('/api/projects', (req,res) => {
 })
 
 //Creates a new Project document from data. Doesn't populate the mstoneID
-app.post('/api/projects', function (req, res) {
+router.post('/projects', function (req, res) {
 	// res.json(req.body)
+	console.log('Create new Project');
 	Project.create({
 		"projectName": req.body.projectName,
 		"description": req.body.description,
@@ -67,7 +76,7 @@ app.post('/api/projects', function (req, res) {
 })
 
 //Get complete Project document by requested _id
-app.get('/api/projects/:project_id', (req, res) => {
+router.get('/projects/:project_id', (req, res) => {
 	Project.findById(req.params.project_id)
 	.then((project) => {
 		res.json(project);
@@ -79,7 +88,7 @@ app.get('/api/projects/:project_id', (req, res) => {
 })
 
 //Delete Project document by _id
-app.delete('/api/projects/:project_id', function (req, res) {
+router.delete('/projects/:project_id', function (req, res) {
 	// res.json(req.body)
 	Project.remove( 
 		{"_id": req.params.project_id
@@ -94,7 +103,7 @@ app.delete('/api/projects/:project_id', function (req, res) {
 })
 
 //modify Project document by _id
-app.put('/api/projects/:project_id', function (req, res) {
+router.put('/projects/:project_id', function (req, res) {
 	// res.json(req.body)
 	Project.update( 
 		{"_id": req.params.project_id}, 
@@ -117,7 +126,7 @@ app.put('/api/projects/:project_id', function (req, res) {
 
 
 //Write a new Project mstoneId to a specific document based on _id
-app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
+router.post('/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	Project.update(
 		{"_id": req.params.project_id},
 		{ 
@@ -134,7 +143,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	})
 	
 	//Delete an existing Project mstoneId 
-	app.delete('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
+	router.delete('/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 		Project.update({'_id': req.params.project_id}, 
 		{
 			'$pull': 
@@ -152,7 +161,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	})
 	
 	//Modify an existing Project mstoneID. Must have newmstoneId in sent params
-	app.put('/api/projects/mstoneId/:project_id/:mstoneId', function (req,res){
+	router.put('/projects/mstoneId/:project_id/:mstoneId', function (req,res){
 		Project.update({'_id': req.params.project_id, "mstoneIds.mstoneId":req.params.mstoneId}, 
 		{
 			'$set': 
@@ -167,7 +176,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	})
 	
 	//Get milestone array from Project document by requested _id
-	app.get('/api/projects/mstoneId/:project_id', (req, res) => {
+	router.get('/projects/mstoneId/:project_id', (req, res) => {
 		Project.findById(req.params.project_id)
 		.then((project) => {
 			res.json(project.mstoneIds);
@@ -183,14 +192,14 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	
 	
 	//Show all milestone docs in collection
-	app.get('/api/mstones', (req,res) => {
+	router.get('/mstones', (req,res) => {
 		Milestone.find({}).then(eachOne => {
 			res.json(eachOne);
 		})
 	})
 	
 	//Create new milestone document from data
-	app.post('/api/mstones', function (req, res) {
+	router.post('/mstones', function (req, res) {
 		// res.json(req.body)
 		Milestone.create({
 			"mstoneName":	req.body.mstoneName,
@@ -210,7 +219,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	})
 	
 	//Get complete milestone document by requested _id
-	app.get('/api/mstones/:mstone_id', (req, res) => {
+	router.get('/mstones/:mstone_id', (req, res) => {
 		Milestone.findById(req.params.mstone_id)
 		.then((milestone) => {
 			res.json(milestone);
@@ -222,7 +231,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	})
 	
 	//modify Milestone document by _id
-	app.put('/api/mstones/:mstone_id', (req, res) => {
+	router.put('/mstones/:mstone_id', (req, res) => {
 		// res.json(req.body)
 		Milestone.update( 
 			{"_id": req.params.mstone_id}, 
@@ -247,7 +256,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	
 	
 	//Delete Milestone document by _id
-	app.delete('/api/mstones/:mstone_id', function (req, res) {
+	router.delete('/mstones/:mstone_id', function (req, res) {
 		// res.json(req.body)
 		Milestone.remove({"_id": req.params.mstone_id })
 		.then((milestone) => {
@@ -261,7 +270,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 	
 	
 	//Write a new task to a specific Milestone document based on milestone _id
-	app.post('/api/mstones/task/:mstone_id', function (req,res){
+	router.post('/mstones/task/:mstone_id', function (req,res){
 		Milestone.update(
 			{"_id": req.params.mstone_id},
 			{ 
@@ -287,7 +296,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 		
 		
 		//Modify an existing Milestone task by task _id. Must have newmstoneId in sent params
-		app.put('/api/mstones/tasks/:mstone_id/:task_id', function (req,res){
+		router.put('/mstones/tasks/:mstone_id/:task_id', function (req,res){
 			Milestone.update({'_id': req.params.mstone_id, "tasks._id":req.params.task_id}, 
 			{
 				'$set': 
@@ -307,7 +316,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 		})
 		
 		//Delete an existing Milestone task by task _id
-		app.delete('/api/mstones/tasks/:mstone_id/:task_id', function (req,res){
+		router.delete('/mstones/tasks/:mstone_id/:task_id', function (req,res){
 			Milestone.update({'_id': req.params.mstone_id}, 
 			{
 				'$pull': {
@@ -325,7 +334,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 			})
 			
 			//Get full task array from Milestone document by requested _id
-			app.get('/api/mstones/tasks/:mstone_id', (req, res) => {
+			router.get('/mstones/tasks/:mstone_id', (req, res) => {
 				Milestone.findById(req.params.mstone_id)
 				.then((milestone) => {
 					res.json(milestone.tasks);
@@ -339,7 +348,7 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 			
 			//Return a single milestone task by task_id
 			//Get task array from Milestone document by requested _id
-			app.get('/api/mstones/task/:task_id', (req, res) => {
+			router.get('/mstones/task/:task_id', (req, res) => {
 				Milestone.find(
 					{'tasks._id': req.params.task_id},
 					{_id:0, 'tasks.$' : 1}
@@ -352,9 +361,10 @@ app.post('/api/projects/mstoneId/:project_id/:mstone_id', function (req,res){
 						console.log('Error! ', err);
 					})
 				})
-				
-				
-				
-				app.listen(3000);
-				console.log('Starting Mongo Test Application');
-				
+
+				// app.listen(3001);
+				// console.log('Starting Mongo Test Application');
+				const port = process.env.PORT || 3301;
+				app.listen(port, () => {
+					console.log(`Server running at http://localhost:${port}`);
+				 });
